@@ -631,14 +631,11 @@ public class ManageProfileController extends BaseWorkspaceController {
         return email;
     }
 
-    @SuppressWarnings("unchecked")
     @RequestMapping(value = "/emails.json", method = RequestMethod.GET)
     public @ResponseBody
     org.orcid.pojo.ajaxForm.Emails getEmailsJson(HttpServletRequest request) throws NoSuchRequestHandlingMethodException {
         OrcidProfile currentProfile = getEffectiveProfile();
-        Emails emails = new org.orcid.pojo.ajaxForm.Emails();
-        emails.setEmails((List<org.orcid.pojo.Email>) (Object) currentProfile.getOrcidBio().getContactDetails().getEmail());
-        return emails;
+        return org.orcid.pojo.ajaxForm.Emails.valueOf(currentProfile.getOrcidBio().getContactDetails().getEmail());
     }
 
     @RequestMapping(value = "/addEmail.json", method = RequestMethod.POST)
@@ -684,10 +681,10 @@ public class ManageProfileController extends BaseWorkspaceController {
                     newPrime = email.getValue();
                 }
 
-                emails.add(email);
+                emails.add(email.toEmail());
                 currentProfile.getOrcidBio().getContactDetails().setEmail(emails);
                 email.setSource(getRealUserOrcid());
-                emailManager.addEmail(currentProfile.getOrcidIdentifier().getPath(), email);
+                emailManager.addEmail(currentProfile.getOrcidIdentifier().getPath(), email.toEmail());
 
                 // send verifcation email for new address
                 URI baseUri = OrcidWebUtils.getServerUriWithContextPath(request);
@@ -770,11 +767,11 @@ public class ManageProfileController extends BaseWorkspaceController {
 
         OrcidProfile currentProfile = getEffectiveProfile();
         if (currentProfile.getOrcidBio().getContactDetails().retrievePrimaryEmail() != null)
-            oldPrime = new org.orcid.pojo.Email(currentProfile.getOrcidBio().getContactDetails().retrievePrimaryEmail());
+            oldPrime = org.orcid.pojo.Email.valueOf(currentProfile.getOrcidBio().getContactDetails().retrievePrimaryEmail());
 
         emails.setErrors(allErrors);
         if (allErrors.size() == 0) {
-            currentProfile.getOrcidBio().getContactDetails().setEmail((List<Email>) (Object) emails.getEmails());
+            currentProfile.getOrcidBio().getContactDetails().setEmail(emails.toEmails());
             emailManager.updateEmails(currentProfile.getOrcidIdentifier().getPath(), currentProfile.getOrcidBio().getContactDetails().getEmail());
             if (newPrime != null && !newPrime.getValue().equalsIgnoreCase(oldPrime.getValue())) {
                 URI baseUri = OrcidWebUtils.getServerUriWithContextPath(request);
